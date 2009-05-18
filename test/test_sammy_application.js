@@ -41,7 +41,7 @@
               alert('blurgh');
             });
 
-			this.get('#/', function() {
+			      this.get('#/', function() {
               alert('home');
             });
           });
@@ -77,16 +77,16 @@
         equals(route.verb, 'get');
         defined(route, 'callback');
       })
-	  .should('append late and short route to application.routes object', function() {
-		var app = this.app
-	    ok(app.routes['get']);
-	    equals(5, app.routes['get'].length())
+  	  .should('append late and short route to application.routes object', function() {
+        var app = this.app;
+        ok(app.routes['get']);
+        equals(5, app.routes['get'].length)
         var route = app.routes['get'][4];
-		isType(route.path, RegExp);
+        isType(route.path, RegExp);
         equals(route.verb, 'get');
         defined(route, 'callback');
-		equals(route.path.toString(), "/#\//")
-	  });
+        equals(route.path.toString(), new RegExp("#/").toString());
+      });
       
       context('Sammy.Application', 'bind', {
         before: function() {
