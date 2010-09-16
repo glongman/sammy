@@ -1,41 +1,41 @@
 ;(function($) {
-  var app = new Sammy.Application(function() { with(this) {
-    element_selector = '#main';
-    
-    var db, db_loaded;
-    db        = null;
-    db_loaded = false;
-                        
-    before(function() { with(this) {
+  var app = $.sammy('#main', function() {
+    this.debug = true;
+    this.use(Sammy.Cache);
+    this.use(Sammy.Template, 'erb');
+
+    var db = null,
+        db_loaded = false;
+
+    this.before(function() {
       if (!db_loaded) {
-        redirect('#/connecting');
+        this.redirect('#/connecting');
         return false;
-      } 
-    }});
-    
+      }
+    });
+
     // display tasks
-    get('#/', function() { with (this) {
-      partial('/templates/index.html.erb', function(html) {
+    this.get('#/', function(context) {
+      this.partial('/templates/index.html.erb', function(html) {
         $('#main').html(html);
-        this.each(db.collection('tasks').all(), function(i, task) {
-          this.log('task', task.json());
-          this.partial('/templates/task.html.erb', {task: task}, function(task_html) {
+        $.each(db.collection('tasks').all(), function(i, task) {
+          context.log('task', task.json());
+          context.partial('/templates/task.html.erb', {task: task}, function(task_html) {
             $(task_html).data('task', task).prependTo('#tasks');
           });
         });
       });
-    }});
-    
-    get('#/tasks/:id', function() { with(this) {
-      this.task = db.collection('tasks').get(params['id']).json();
+    });
+
+    this.get('#/tasks/:id', function() {
+      this.task = db.collection('tasks').get(this.params['id']).json();
       this.partial('/templates/task_details.html.erb')
-    }});
-    
-    post('#/tasks', function() { with(this) {
-      var context = this;
-      var task    = {
-        entry: params['entry'], 
-        completed: false, 
+    });
+
+    this.post('#/tasks', function(context) {
+      var task  = {
+        entry: this.params['entry'],
+        completed: false,
         created_at: Date()
       };
       db.collection('tasks').create(task, {
@@ -50,14 +50,13 @@
           context.trigger('error', {message: 'Sorry, could not save your task.'})
         }
       });
-      return false;
-    }});
-    
-    get('#/connecting', function() { with(this) {
+    });
+
+    this.get('#/connecting', function() {
       $('#main').html('<span class="loading">... Loading ...</span>');
-    }});
-    
-    bind('task-toggle', function(e, data) { with(this) {
+    });
+
+    this.bind('task-toggle', function(e, data) {
       this.log('data', data)
       var $task = data.$task;
       this.task = db.collection('tasks').get($task.attr('id'));
@@ -67,9 +66,9 @@
           $task.toggleClass('completed');
         }
       });
-    }});
-    
-    bind('run', function() {
+    });
+
+    this.bind('run', function() {
       var context = this;
       db = $.cloudkit;
       db.boot({
@@ -82,28 +81,25 @@
           context.trigger('error', {message: 'Could not connect to CloudKit.'})
         }
       });
-      
+
       $('li.task :checkbox').live('click', function() {
         var $task = $(this).parents('.task');
         context.trigger('task-toggle', {$task: $task});
       });
     });
-    
-    bind('db-loaded', function() { with(this) {
-      redirect('#/')
-    }});
-    
-    bind('error', function(e, data) { with(this) {
-      render('text', '#error', data.message).show();
-    }});
-    
-    
-  }});
-  
+
+    this.bind('db-loaded', function() {
+      this.redirect('#/')
+    });
+
+    this.bind('error', function(e, data) {
+      $('#error').text(data.message).show();
+    });
+
+
+  });
+
   $(function() {
-    app.addLogger(function(e, data) {
-      $('#debug').append([app.toString(), app.namespace, e.cleaned_type, data, '<br />'].join(' '));
-    })
     app.run('#/');
   })
 })(jQuery);

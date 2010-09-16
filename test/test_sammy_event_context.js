@@ -1,7 +1,8 @@
 (function($) {
-    with(jqUnit) {
+    with(QUnit) {
+
       var test_app = new Sammy.Application(function() {
-        this.silence_404 = false;
+        this.raise_errors = false;
         this.element_selector = '#main';
       });
       var test_context = new Sammy.EventContext(test_app, 'get', '#/test/:test', {test: 'hooray'});
@@ -13,18 +14,18 @@
         }
       })
       .should('set app', function() {
-        isObj(this.context.app, this.app);
+        deepEqual(this.context.app, this.app);
       })
       .should('set verb', function() {
-        equals(this.context.verb, 'get');
+        equal(this.context.verb, 'get');
       })
       .should('set path', function() {
-        equals(this.context.path, '#/test/:test');
+        equal(this.context.path, '#/test/:test');
       })
       .should('set params', function() {
-        isObj(this.context.params, new Sammy.Object({test: 'hooray'}));
+        deepEqual(this.context.params, new Sammy.Object({test: 'hooray'}));
       });
-      
+
 
       context('Sammy', 'EventContext', 'redirect', {
         before: function() {
@@ -36,12 +37,17 @@
         }
       })
       .should('set full location if url is provided', function() {
-        this.context.redirect('sammy.html#/boosh');
-        equals('#/boosh', window.location.hash);
+        this.context.redirect('index.html#/boosh');
+        equal('#/boosh', window.location.hash);
       })
       .should('only set hash if location is prefixed with #', function() {
         this.context.redirect('#/blah');
-        equals('#/blah', window.location.hash);
+        equal('#/blah', window.location.hash);
+      })
+      .should('join the arguments with / if more then one argument is provided', function() {
+        var boosh = 'boosh';
+        this.context.redirect('#', 'blah', boosh);
+        equal('#/blah/boosh', window.location.hash);
       });
 
 
@@ -52,99 +58,89 @@
       })
       .should('throw 404 error', function() {
         var context = this.context;
+        context.app.raise_errors = true;
         raised(/404/, function() {
           context.notFound();
         });
       });
 
-
-      // context('Sammy', 'EventContext', 'render', 'text', {
-      //   before: function() {
-      //     this.context = test_context;
-      //   }
-      // })
-      // .should('put text in selector', function() {
-      //   this.context.render('text', '#test_area', 'test it')
-      //   equals($('#test_area').text(), 'test it');
-      // })
-      // .should('assume selector is the app element if none is passed', function() {
-      //   this.context.render('text', 'im in main');
-      //   equals(test_app.$element().text(), 'im in main');
-      // });
-      // 
-      // 
-      // context('Sammy', 'EventContext', 'render', 'html', {
-      //   before: function() {
-      //     this.context = test_context;
-      //   }
-      // })
-      // .should('put html in selector', function() {
-      //   this.context.render('html', '#test_area', '<div class="test_class">TEST!</div>')
-      //   equals($('#test_area').html(), '<div class="test_class">TEST!</div>');
-      // })
-      // .should('assume selector is the app element if none is passed', function() {
-      //   this.context.render('html', '<span>im in main</span>');
-      //   equals(test_app.$element().html(), '<span>im in main</span>');
-      // });
-      
-
-      context('Sammy', 'EventContext', 'template', {
-        before: function() {
-          this.context = test_context;
-        }
-      })
-      .should('put use srender to interpolate in content', function() {
-        var rendered = this.context.template('<div class="test_class"><%= text %></div>', {text: 'TEXT!'});
-        equals(rendered, '<div class="test_class">TEXT!</div>');
-      })
-      .should('should set the context of the template to the test_context', function() {
-        this.context.blurgh = 'boosh';
-        var rendered = this.context.template('<div class="test_class"><%= text %> <%= blurgh %></div>', {text: 'TEXT!'});
-        equals(rendered, '<div class="test_class">TEXT! boosh</div>');
-      });
-      
-      
       context('Sammy', 'EventContext', 'partial', {
         before: function() {
+          this.app     = test_app;
+          this.app.raise_errors = false;
           this.context = test_context;
         }
       })
       .should('pass contents to callback', function() {
         var contents = '';
-        this.context.partial('fixtures/partial.html', function(data) { contents = data; });
+        this.context.partial('fixtures/partial.html').then(function(data) { contents = data; });
         soon(function () {
-          equals(contents, '<div class="test_partial">PARTIAL</div>');
-        });
+          sameHTML(contents, '<div class="test_partial">PARTIAL</div>');
+        }, this, 2);
       })
-      .should('run through templating/srender if json is passed as an additional argument', function() {
+      .should('not run through template() if Sammy.Template is not present', function() {
         var contents = '';
-        this.context.partial('fixtures/templated_partial.html', {name: 'TEMPLATE!', class_name: 'test_template'}, function(data) { 
-          contents = data; 
+        this.context.partial('fixtures/partial.template', {name: 'TEMPLATE!', class_name: 'test_template'}).then(function(data) {
+          contents = data;
         });
         soon(function () {
-          equals(contents, '<div class="test_template">TEMPLATE!</div>');
-        });
+          sameHTML(contents, '<div class="<%= class_name %>"><%= name %></div>');
+        }, this, 2);
       })
-      .should('use cached template the second call', function() {
+      .should('run through template() if Sammy.Template _is_ present', function() {
         var contents = '';
-        this.context.partial('fixtures/templated_partial.html', {name: 'TEMPLATE!', class_name: 'test_template'}, function(data) { 
-          contents = data; 
+        var app = new Sammy.Application(function() { this.element_selector = '#main'; });
+        app.use(Sammy.Template);
+        this.context = new app.context_prototype(app);
+        this.context.partial('fixtures/partial.template', {name: 'TEMPLATE!', class_name: 'test_template'}).then(function(data) {
+          contents = data;
         });
         soon(function () {
-          equals(contents, '<div class="test_template">TEMPLATE!</div>');
-          this.context.partial('fixtures/templated_partial.html', {name: 'CACHED!', class_name: 'test_template'}, function(data) { 
-            contents = data;
-          });
-          equals(contents, '<div class="test_template">CACHED!</div>');
-        }, this, 1, 2);
+          sameHTML(contents, '<div class="test_template">TEMPLATE!</div>');
+        }, this, 2);
       })
       .should('replace default app element if no callback is passed', function() {
-        this.context.partial('fixtures/templated_partial.html', {name: 'TEMPLATE!', class_name: 'test_template'});
+        var contents = '';
+        var app = new Sammy.Application(function() { this.element_selector = '#main'; });
+        app.use(Sammy.Template);
+        this.context = new app.context_prototype(app);
+        this.context.partial('fixtures/partial.template', {name: 'TEMPLATE!', class_name: 'test_template'});
         soon(function () {
-          equals(test_app.$element().html(), '<div class="test_template">TEMPLATE!</div>');
+          equal(app.$element().text(), 'TEMPLATE!');
+          equal(app.$element().children('.test_template').length, 1);
+        }, this, 2, 2);
+      })
+      .should('use default engine if provided and template doesnt match an engine', function() {
+        var contents = '';
+        var app = new Sammy.Application(function() {
+          this.element_selector = '#main';
+          this.template_engine  = 'template';
+
+          this.helper('template',  function(template, data) {
+            return "!!!" + template.toString() + "!!!";
+          });
         });
-      });      
-      
+        this.context = new app.context_prototype(app);
+        this.context.partial('fixtures/partial');
+        soon(function () {
+          equal(app.$element().text(), '!!!NOENGINE!!!');
+        });
+      })
+      .should('use default engine as a method if template doesnt match an engine', function() {
+        var contents = '';
+        var app = new Sammy.Application(function() {
+          this.element_selector = '#main';
+          this.template_engine  = function(template, data) {
+            return "!!!" + template.toString() + "!!!";
+          };
+        });
+        this.context = new app.context_prototype(app);
+        this.context.partial('fixtures/partial.noengine');
+        soon(function () {
+          equal(app.$element().text(), '!!!NOENGINE!!!');
+        });
+      });
+
       context('Sammy', 'EventContext', 'trigger', {
         before: function() {
           this.context = test_context;
@@ -162,7 +158,7 @@
         });
         this.context.trigger('custom');
         soon(function() {
-          equals(spec_context.event_fired, true);
+          equal(spec_context.event_fired, true);
         });
       })
       .should('set the context of the event to the Sammy.EventContext', function() {
@@ -173,7 +169,7 @@
         });
         this.context.trigger('other.custom');
         soon(function() {
-          isObj(event_context, test_context);
+          equal(event_context.toString(), test_context.toString());
         });
       })
       .should('pass data as an argument to the bound method', function() {
@@ -184,9 +180,9 @@
         });
         this.context.trigger('custom-with-data', test_data);
         soon(function() {
-          isObj(passed_data, test_data);
+          deepEqual(passed_data, test_data);
         });
       });
-      
+
     };
 })(jQuery);

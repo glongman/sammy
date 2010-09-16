@@ -8,8 +8,8 @@ Sammy is a tiny javascript framework built on top of jQuery inspired by Ruby's [
 
 ## Installation
 
-Download sammy.js and install it in your public javascripts directory.
-Include it in your document AFTER jquery.
+Download Sammy.js and install it in your public javascripts directory.
+Include it in your document AFTER jQuery.
 
 ## Usage
 
@@ -17,19 +17,19 @@ Like Sinatra, a Sammy application revolves around 'routes'. Routes in Sammy are 
 
 You set up a Sammy Application by passing a Function to the `$.sammy` (which is a shortcut for the Sammy.Application constructor).
 
-    $.sammy(function() { with(this) {
+    $.sammy(function() {
       
-      get('#/', function() { with(this) {
+      this.get('#/', function() {
         $('#main').text('Welcome!');
-      }});
+      });
       
-    }});
+    });
 
-Inside of the 'app' function() `this` is the Application. This is where you can configure the application and add routes.
+Inside the 'app' function() `this` is the Application. This is where you can configure the application and add routes.
 
-Above, we defined a `get()` route. When the browser is pointed to `#/` the function passed to that route will be run. Inside of the route function, `this` is a Sammy.EventContext. EventContext has a bunch of special methods and properties including a params hash, the ability to redirect, render partials, and more.
+Above, we defined a `get()` route. When the browser is pointed to `#/` the function passed to that route will be run. Inside the route function, `this` is a Sammy.EventContext. EventContext has a bunch of special methods and properties including a params hash, the ability to redirect, render partials, and more.
 
-Once you've defined an application the only thing left to do is run it. The best practice behavior is to encapulate `run()` in a document.ready block:
+Once you've defined an application the only thing left to do is run it. The best-practice behavior is to encapsulate `run()` in a document.ready block:
 
     var app = $.sammy(...)
     
@@ -37,11 +37,11 @@ Once you've defined an application the only thing left to do is run it. The best
       app.run();
     });
 
-This will guaruntee that the DOM is loaded before we try to apply functionality to it.
+This will guarantee that the DOM is loaded before we try to apply functionality to it.
 
 ## Dependencies
 
-Sammy requires jQuery > 1.3.2
+Sammy requires jQuery >= 1.4.1
 Get it from: [http://jquery.com](http://jquery.com)
 
 ## More!
@@ -51,16 +51,38 @@ Get it from: [http://jquery.com](http://jquery.com)
 * [Intro](http://code.quirkey.com/sammy)
 * [Docs](http://code.quirkey.com/sammy/docs/)
 * [Examples](http://github.com/quirkey/sammy/tree/master/examples/)
-* [Blog/Screencasts](http://www.quirkey.com/blog/category/sammy/)
+* [More Resources on the Sammy Wiki](http://github.com/quirkey/sammy/wiki/)
 
 ### Keep informed!
 
 * [Follow @sammy_js](http://twitter.com/sammy_js)
 * [Join the mailing list](http://groups.google.com/group/sammyjs)
+* [Chat with us in #sammy](irc://irc.freenode.net/#sammy)
 
+## Authors
+
+Sammy.js was created and is maintained by Aaron Quint <aaron at quirkey.com> with additional features and fixes contributed by these talented individuals:
+
+* Frank Prößdorf / endor 
+* Alexander Lang / langalex
+* Scott McMillin / scottymac
+* ZhangJinzhu / jinzhu
+* Jesse Hallett / hallettj
+* Jonathan Vaught / gravelpup
+* Jason Davies / jasondavies
+* Russell Jones / CodeOfficer
+* Geoff Longman 
+* Jens Bissinger / dpree
+* Tim Caswell / creationix
+* Mark Needham 
+* SamDeLaGarza
+* Mickael Bailly / dready92
+* Rich Manalang / manalang
+* Brian Mitchell / binary42
+  
 ## License
 
 Sammy is covered by the MIT License. See LICENSE for more information.
 
-Sammy includes code originaly created by John Resig ([Class implementation](http://ejohn.org/blog/simple-javascript-inheritance/)) and Greg Borenstien ([srender](http://github.com/atduskgreg/srender/tree/master)).
+Sammy includes code originally created by John Resig ([Class implementation](http://ejohn.org/blog/simple-javascript-inheritance/)) and Greg Borenstien ([srender](http://github.com/atduskgreg/srender/tree/master)).
 
